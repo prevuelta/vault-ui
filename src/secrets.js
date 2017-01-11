@@ -29,6 +29,7 @@ exports.listSecretBackends = function (req, res) {
   let vaultAddr = decodeURI(req.query['vaultaddr']);
   let config = { headers: { 'X-Vault-Token': decodeURI(req.query['token']) } }
 
+
   axios.get(`${vaultAddr}${endpoint}`, config)
       .then((resp) => {
           res.json(resp.data);
@@ -90,14 +91,16 @@ exports.writeSecret = function (req, res) {
     let endpoint = `/v1${decodeURI(req.query['secret'])}`;
     let config = { headers: { 'X-Vault-Token': req.query['token'] } }
 
-    let body = _.get(req, "body.Value")
-    let vaultAddr = _.get(req, 'body.VaultUrl');
+    let body = _.get(req, "body.value")
+    let vaultAddr = _.get(req, 'body.vaultUrl');
 
     try {
-        secretValue = JSON.parse(secretValue)
-    } catch(e) { }
+        let secretValue = JSON.parse(body)
+    } catch(e) {
+        console.log(e);
+    }
 
-    axios.post(`${_.get(req, "body.VaultUrl")}${endpoint}`, body, config)
+    axios.post(`${_.get(req, "body.vaultUrl")}${endpoint}`,body, config)
         .then((resp) => {
             res.json(resp.data.auth);
         })

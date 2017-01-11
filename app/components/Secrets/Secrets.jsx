@@ -11,6 +11,7 @@ import copy from 'copy-to-clipboard';
 import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import TextField from 'material-ui/TextField';
+import DataInput from './DataInput.jsx';
 import { green500, green400, red500, red300, yellow500, white } from 'material-ui/styles/colors.js'
 import axios from 'axios';
 
@@ -35,7 +36,7 @@ class Secrets extends React.Component {
             listBackends: false,
             secretBackends: [],
             secrets: [],
-            namespace: '/secret/',
+            namespace: '/secret',
             useRootKey: window.localStorage.getItem("useRootKey") === 'true' || false,
             rootKey: window.localStorage.getItem("secretsRootKey") || '',
             disableAddButton: false,
@@ -70,7 +71,7 @@ class Secrets extends React.Component {
     }
 
     deleteKey(key) {
-        let fullKey = `${this.state.namespace}${key}`;
+        let fullKey = `${this.state.namespace}/${key}`;
         axios.delete(`/secret?vaultaddr=${encodeURI(window.localStorage.getItem("vaultUrl"))}&secret=${encodeURI(fullKey)}&token=${encodeURI(window.localStorage.getItem("vaultAccessToken"))}`)
             .then((resp) => {
                 if (resp.status !== 204) {
@@ -95,11 +96,11 @@ class Secrets extends React.Component {
     }
 
     updateSecret(isNewKey) {
-        let fullKey = `${this.state.namespace}${this.state.focusKey}`;
+        let fullKey = `${this.state.namespace}/${this.state.focusKey}`;
         //Check if the secret is a json object, if so stringify it. This is needed to properly escape characters.
         let secret = typeof this.state.focusSecret == 'object' ? JSON.stringify(this.state.focusSecret) : this.state.focusSecret;
 
-        axios.post(`/secret?vaultaddr=${encodeURI(window.localStorage.getItem("vaultUrl"))}&secret=${encodeURI(fullKey)}&token=${encodeURI(window.localStorage.getItem("vaultAccessToken"))}`, { "VaultUrl": window.localStorage.getItem("vaultUrl"), "Value": secret })
+        axios.post(`/secret?vaultaddr=${encodeURI(window.localStorage.getItem("vaultUrl"))}&secret=${encodeURI(fullKey)}&token=${encodeURI(window.localStorage.getItem("vaultAccessToken"))}`, { "vaultUrl": window.localStorage.getItem("vaultUrl"), "value": secret })
             .then((resp) => {
                 if (isNewKey) {
                     let secrets = this.state.secrets;
@@ -115,16 +116,10 @@ class Secrets extends React.Component {
             })
     }
 
-    secretChanged(e, v) {
-        if (this.state.useRootKey) {
-            //If root key is in place, set as json object to properly escape special characters
-            let tmp = {};
-            tmp = _.set(tmp, `${this.state.rootKey}`, v);
-            this.state.focusSecret = tmp;
-        } else {
-            this.state.focusSecret = v;
-
-        }
+    secretChanged(v) {
+        let o = {}
+        v.forEach(e => o[e[0]] = e[1]);
+        this.state.focusSecret = JSON.stringify(o);
     }
 
     checkValidJson() {
@@ -160,21 +155,16 @@ class Secrets extends React.Component {
 
         return (
             <Dialog
-                title={`Editing ${this.state.namespace}${this.state.focusKey}`}
+                title={`Editing ${this.state.namespace}/${this.state.focusKey}`}
                 modal={false}
                 actions={actions}
                 open={this.state.openEditModal}
                 onRequestClose={() => this.setState({ openEditModal: false })}
                 autoScrollBodyContent={true}
                 >
-                <TextField
+                <DataInput
                     onChange={this.secretChanged}
-                    name="editingText"
-                    disabled={this.state.disableTextField}
-                    autoFocus
-                    multiLine={true}
-                    defaultValue={this.state.focusSecret}
-                    fullWidth={true} />
+                    values={JSON.parse(this.state.focusSecret)}/>
                 <div className={styles.error}>{this.state.errorMessage}</div>
             </Dialog>
         );
@@ -247,14 +237,10 @@ class Secrets extends React.Component {
                 autoScrollBodyContent={true}
                 >
                 <TextField name="newKey" autoFocus fullWidth={true} hintText="Key" onChange={(e, v) => this.setState({ focusKey: v })} />
-                <TextField
+                <DataInput
                     name="newValue"
-                    multiLine={true}
-                    fullWidth={true}
-                    hintText="Value"
                     onChange={this.secretChanged} />
                 <div className={styles.error}>{this.state.errorMessage}</div>
-                <div>{rootKeyInfo}</div>
             </Dialog>
         );
     }
@@ -316,10 +302,10 @@ class Secrets extends React.Component {
             if (isFullPath) {
                 this.getSecrets(`${key}`);
             } else {
-                this.getSecrets(`${this.state.namespace}${key}`);
+                this.getSecrets(`${this.state.namespace}/${key}`);
             }
         } else {
-            let fullKey = `${this.state.namespace}${key}`;
+            let fullKey = `${this.state.namespace}/${key}`;
             axios.get(`/secret?vaultaddr=${encodeURI(window.localStorage.getItem("vaultUrl"))}&secret=${encodeURI(fullKey)}&token=${encodeURI(window.localStorage.getItem("vaultAccessToken"))}`)
                 .then((resp) => {
                     let val = this.state.useRootKey ? _.get(resp, `data.${this.state.rootKey}`) : resp.data;
