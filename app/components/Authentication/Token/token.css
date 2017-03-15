@@ -1,0 +1,33 @@
+#welcomeHeadline {
+    font-size: 60px;
+    font-weight: 200;
+}
+
+span.policiesList > div > div {
+    padding: 2px !important;
+    font-size: 90%;
+    text-align: center;
+    vertical-align: middle;
+    border: dashed 1px black;
+}
+
+span.policiesList > div > div > div {
+    margin: 2px 0px 2px !important;
+}
+
+.textFieldStyle {
+    width: 30% !important;
+    padding-right: 3%;
+}
+
+.classActionDelete {
+    position: absolute !important;
+    right: 4px;
+    top: 0px;
+}
+
+.TokenFromRoleBtn {
+    position: absolute;
+    right: 64px;
+    bottom: 10px;
+}

@@ -6,15 +6,18 @@ var path = require('path');
 var axios = require('axios');
 var _ = require('lodash');
 var routeHandler = require('./src/routeHandler');
+var compression = require('compression');
 
 var PORT = 8000;
 var VAULT_URL_DEFAULT = process.env.VAULT_URL_DEFAULT || "";
 var VAULT_AUTH_DEFAULT = process.env.VAULT_AUTH_DEFAULT || "GITHUB";
+var VAULT_SUPPLIED_TOKEN_HEADER = process.env.VAULT_SUPPLIED_TOKEN_HEADER
+var VAULT_AUTH_BACKEND_PATH = process.env.VAULT_AUTH_BACKEND_PATH
 
 var app = express();
 app.set('view engine', 'html');
 app.engine('html', require('hbs').__express);
-app.use('/assets', express.static('dist'));
+app.use('/assets', compression(), express.static('dist'));
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -32,58 +35,6 @@ app.listen(PORT, function () {
     console.log('Vault UI listening on: ' + PORT);
 });
 
-app.get('/listauthbackends', function (req, res) {
-    routeHandler.listAuthBackends(req, res);
-});
-
-app.post('/login', function (req, res) {
-    routeHandler.login(req, res);
-});
-
-app.get('/listsecretbackends', function (req, res) {
-    routeHandler.listSecretBackends(req, res);
-});
-
-app.get('/listsecrets', function (req, res) {
-    routeHandler.listSecrets(req, res);
-});
-
-app.get('/secret', function (req, res) {
-    routeHandler.getSecret(req, res);
-});
-
-app.post('/secret', function (req, res) {
-    routeHandler.writeSecret(req, res);
-});
-
-app.delete('/secret', function (req, res) {
-    routeHandler.deleteSecret(req, res);
-});
-
-app.get('/listpolicies', function (req, res) {
-    routeHandler.listPolicies(req, res);
-});
-
-app.get('/policy', function (req, res) {
-    routeHandler.getPolicy(req, res);
-});
-
-app.put('/policy', function (req, res) {
-    routeHandler.updatePolicy(req, res);
-});
-
-app.delete('/policy', function (req, res) {
-    routeHandler.deletePolicy(req, res);
-});
-
-app.get('/githubteampolicy', function(req, res) {
-    routeHandler.getGithubTeamPolicy(req, res);
-});
-
-app.post('/githubteampolicy', function(req, res) {
-    routeHandler.setGithubTeamPolicy(req, res);
-});
-
 app.post('/wrap', function(req,res) {
     routeHandler.wrapValue(req, res);
 });
@@ -92,8 +43,17 @@ app.post('/unwrap', function(req, res) {
     routeHandler.unwrapValue(req, res);
 })
 
+app.all('/v1/*', function(req, res, next) {
+    routeHandler.vaultapi(req, res);
+})
+
 app.get('/');
 
 app.get('*', function (req, res) {
-    res.render(path.join(__dirname, '/index.html'),{defaultUrl: VAULT_URL_DEFAULT, defaultAuth: VAULT_AUTH_DEFAULT});
+    res.render(path.join(__dirname, '/index.html'),{
+        defaultUrl: VAULT_URL_DEFAULT,
+        defaultAuth: VAULT_AUTH_DEFAULT,
+        suppliedAuthToken: VAULT_SUPPLIED_TOKEN_HEADER ? req.header(VAULT_SUPPLIED_TOKEN_HEADER) : "",
+        defaultBackendPath: VAULT_AUTH_BACKEND_PATH
+    });
 });

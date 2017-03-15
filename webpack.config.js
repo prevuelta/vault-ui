@@ -14,6 +14,7 @@ module.exports = {
         publicPath: '/assets/',
         filename: 'bundle.js'
     },
+    devtool: 'eval',
     module: {
         loaders: [{
             test: /\.jsx?$/,
@@ -21,28 +22,24 @@ module.exports = {
             exclude: 'node_modules'
         }, {
             test: /\.json$/i,
-            loader: 'json',
+            loader: 'json-loader',
             exclude: 'node_modules'
         }, {
+            test: /\.svg$/,
+            loader: 'url'
+        }, {
             test: /\.css$/,
-            loader: ExtractTextPlugin.extract('css?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader')
+            loader: ExtractTextPlugin.extract('css?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]!postcss-loader'),
+            exclude: /node_modules/
+        }, {
+            test: /\.css$/,
+            loader: ExtractTextPlugin.extract('css!postcss-loader'),
+            include: /node_modules/
         }]
     },
     postcss: [ autoprefixer({ browsers: ['last 2 versions'] }) ],
     plugins: [
-        // new webpack.DefinePlugin({
-        //     'process.env': {
-        //        'NODE_ENV': JSON.stringify('production')
-        //     }
-        //   }),
-        // new webpack.optimize.UglifyJsPlugin({
-        //     compress: {
-        //         warnings: false,
-        //         screw_ie8: true
-        //     },
-        //     comments: false,
-        //     sourceMap: false
-        // }),
-        new ExtractTextPlugin("styles.css")
+        new ExtractTextPlugin("styles.css"),
+        new webpack.IgnorePlugin(/regenerator|nodent|js-beautify/, /ajv/)
     ]
 };
